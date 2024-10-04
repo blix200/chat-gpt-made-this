@@ -1,199 +1,156 @@
--- SL2HubLibrary Module for Executors
-local SL2HubLibrary = {}
+-- Create main ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MacOSUI"
+screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
--- Function to create a screen GUI
-function SL2HubLibrary:CreateScreenGUI(name)
-    local screenGUI = Instance.new("ScreenGui")
-    screenGUI.Name = name or "SL2HubScreenGUI"
-    screenGUI.ResetOnSpawn = false
-    
-    if syn and syn.protect_gui then
-        syn.protect_gui(screenGUI)
-    elseif gethui then
-        screenGUI.Parent = gethui()
-    else
-        screenGUI.Parent = game.CoreGui
-    end
-    
-    return screenGUI
-end
+-- Create main window frame
+local window = Instance.new("Frame")
+window.Name = "Window"
+window.Size = UDim2.new(0, 400, 0, 300)
+window.Position = UDim2.new(0.5, -200, 0.5, -150)
+window.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+window.BorderSizePixel = 0
+window.Parent = screenGui
 
--- Function to create a frame
-function SL2HubLibrary:CreateFrame(parent, position, size)
-    local frame = Instance.new("Frame")
-    frame.Size = size or UDim2.new(0, 200, 0, 200)
-    frame.Position = position or UDim2.new(0.5, -100, 0.5, -100)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BorderSizePixel = 1
-    frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-    frame.ClipsDescendants = true
-    frame.Parent = parent
-    
-    local uiStroke = Instance.new("UIStroke", frame)
-    uiStroke.Thickness = 2
-    uiStroke.Color = Color3.fromRGB(255, 0, 0)
-    uiStroke.Transparency = 0.5
-    
-    -- Make frame draggable
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
+-- Top bar
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 25)
+topBar.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+topBar.BorderSizePixel = 0
+topBar.Parent = window
 
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
-    
-    return frame
-end
-
--- Function to create a button
-function SL2HubLibrary:CreateButton(parent, text, position, size, onClick)
-    local button = Instance.new("TextButton")
-    button.Size = size or UDim2.new(0, 100, 0, 50)
-    button.Position = position or UDim2.new(0.5, -50, 0.5, -25)
-    button.Text = text or "Button"
-    button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    button.BorderSizePixel = 1
-    button.BorderColor3 = Color3.fromRGB(255, 0, 0)
-    button.TextColor3 = Color3.fromRGB(255, 0, 0)
-    button.Parent = parent
-    
-    if onClick then
-        button.MouseButton1Click:Connect(onClick)
-    end
-    
+-- MacOS close, minimize, maximize buttons
+local function createWindowButton(name, color, position)
+    local button = Instance.new("Frame")
+    button.Name = name
+    button.Size = UDim2.new(0, 20, 0, 20)
+    button.Position = position
+    button.BackgroundColor3 = color
+    button.BorderSizePixel = 0
+    button.Parent = topBar
     return button
 end
 
--- Function to create a toggle
-function SL2HubLibrary:CreateToggle(parent, text, position, size, onToggle)
-    local toggle = Instance.new("TextButton")
-    toggle.Size = size or UDim2.new(0, 100, 0, 50)
-    toggle.Position = position or UDim2.new(0.5, -50, 0.5, -25)
-    toggle.Text = text or "Toggle"
-    toggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    toggle.BorderSizePixel = 1
-    toggle.BorderColor3 = Color3.fromRGB(255, 0, 0)
-    toggle.TextColor3 = Color3.fromRGB(255, 0, 0)
-    toggle.Parent = parent
+local closeButton = createWindowButton("Close", Color3.fromRGB(255, 95, 87), UDim2.new(0, 5, 0.5, -10))
+local minimizeButton = createWindowButton("Minimize", Color3.fromRGB(255, 189, 76), UDim2.new(0, 30, 0.5, -10))
+local maximizeButton = createWindowButton("Maximize", Color3.fromRGB(39, 201, 63), UDim2.new(0, 55, 0.5, -10))
 
-    local toggled = false
+-- Close functionality
+closeButton.MouseEnter:Connect(function()
+    closeButton.BackgroundColor3 = Color3.fromRGB(245, 85, 77)
+end)
+closeButton.MouseLeave:Connect(function()
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 95, 87)
+end)
+closeButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        window.Visible = false
+    end
+end)
 
-    toggle.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        if toggled then
-            toggle.TextColor3 = Color3.fromRGB(0, 255, 0)
+-- Minimize functionality
+minimizeButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        window.Visible = not window.Visible
+    end
+end)
+
+-- Maximize functionality
+maximizeButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if window.Size == UDim2.new(0, 400, 0, 300) then
+            window.Size = UDim2.new(1, -100, 1, -100)
         else
-            toggle.TextColor3 = Color3.fromRGB(255, 0, 0)
+            window.Size = UDim2.new(0, 400, 0, 300)
         end
-        if onToggle then
-            onToggle(toggled)
+    end
+end)
+
+-- Create Tab buttons
+local tabFrame = Instance.new("Frame")
+tabFrame.Name = "Tabs"
+tabFrame.Size = UDim2.new(1, 0, 0, 30)
+tabFrame.Position = UDim2.new(0, 0, 0, 25)
+tabFrame.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+tabFrame.BorderSizePixel = 0
+tabFrame.Parent = window
+
+local tabs = {}
+
+local function createTab(name, tabPos)
+    local tab = Instance.new("TextButton")
+    tab.Name = name .. "Tab"
+    tab.Size = UDim2.new(0, 100, 1, 0)
+    tab.Position = UDim2.new(0, tabPos, 0, 0)
+    tab.Text = name
+    tab.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+    tab.Parent = tabFrame
+    tabs[name] = tab
+end
+
+createTab("Tab1", 0)
+createTab("Tab2", 100)
+createTab("Tab3", 200)
+
+-- Create Content Frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Size = UDim2.new(1, 0, 1, -55)
+contentFrame.Position = UDim2.new(0, 0, 0, 55)
+contentFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+contentFrame.BorderSizePixel = 0
+contentFrame.Parent = window
+
+-- Button Template
+local function createButton(name, position)
+    local button = Instance.new("TextButton")
+    button.Name = name .. "Button"
+    button.Size = UDim2.new(0, 150, 0, 50)
+    button.Position = position
+    button.Text = name
+    button.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+    button.Parent = contentFrame
+    return button
+end
+
+local button1 = createButton("Button1", UDim2.new(0.5, -75, 0, 10))
+local button2 = createButton("Button2", UDim2.new(0.5, -75, 0, 70))
+
+-- Toggle Template
+local function createToggle(name, position)
+    local toggle = Instance.new("TextButton")
+    toggle.Name = name .. "Toggle"
+    toggle.Size = UDim2.new(0, 150, 0, 50)
+    toggle.Position = position
+    toggle.Text = name .. " (Off)"
+    toggle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+    toggle.Parent = contentFrame
+
+    local isOn = false
+    toggle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isOn = not isOn
+            toggle.Text = name .. (isOn and " (On)" or " (Off)")
+            toggle.BackgroundColor3 = isOn and Color3.fromRGB(39, 201, 63) or Color3.fromRGB(230, 230, 230)
         end
     end)
 
     return toggle
 end
 
--- Function to create a minimizable window
-function SL2HubLibrary:CreateMinimizableWindow(screenGUI, title)
-    local window = SL2HubLibrary:CreateFrame(screenGUI, UDim2.new(0.5, -150, 0.5, -200), UDim2.new(0, 300, 0, 400))
-    
-    local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 30)
-    titleBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    titleBar.BorderSizePixel = 1
-    titleBar.BorderColor3 = Color3.fromRGB(255, 0, 0)
-    titleBar.Parent = window
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 1, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = title or "Window"
-    titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-    titleLabel.Parent = titleBar
-    
-    local minimizeButton = Instance.new("TextButton")
-    minimizeButton.Size = UDim2.new(0, 30, 0, 30)
-    minimizeButton.Position = UDim2.new(1, -30, 0, 0)
-    minimizeButton.Text = "_"
-    minimizeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    minimizeButton.BorderSizePixel = 1
-    minimizeButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
-    minimizeButton.TextColor3 = Color3.fromRGB(255, 0, 0)
-    minimizeButton.Parent = titleBar
-    
-    local contentFrame = Instance.new("Frame")
-    contentFrame.Size = UDim2.new(1, 0, 1, -30)
-    contentFrame.Position = UDim2.new(0, 0, 0, 30)
-    contentFrame.BackgroundTransparency = 1
-    contentFrame.Parent = window
-    
-    minimizeButton.MouseButton1Click:Connect(function()
-        contentFrame.Visible = not contentFrame.Visible
-    end)
-    
-    return window, contentFrame
-end
+local toggle1 = createToggle("Toggle1", UDim2.new(0.5, -75, 0, 130))
 
--- Noclip function
-function SL2HubLibrary:EnableNoclip()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local human = character:FindFirstChildWhichIsA("Humanoid")
-
-    local function noclip()
-        for _, v in pairs(character:GetDescendants()) do
-            if v:IsA("BasePart") and v.CanCollide then
-                v.CanCollide = false
+-- Tab functionality
+for tabName, tab in pairs(tabs) do
+    tab.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            for otherName, otherTab in pairs(tabs) do
+                otherTab.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
             end
-        end
-    end
-    
-    game:GetService("RunService").Stepped:Connect(noclip)
-end
-
--- Teleport to mouse position when 'Q' is pressed
-function SL2HubLibrary:EnableTeleportToMouse()
-    local userInputService = game:GetService("UserInputService")
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    
-    userInputService.InputBegan:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.Q then
-            local mouse = player:GetMouse()
-            if mouse.Target then
-                character:MoveTo(mouse.Hit.p)
-            end
+            tab.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+            contentFrame:ClearAllChildren() -- Clear the content frame for new tab
+            -- Here you can add custom content for each tab dynamically
         end
     end)
 end
-
-return SL2HubLibrary
